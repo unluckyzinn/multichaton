@@ -68,7 +68,7 @@ export class ChatUIController {
       scrollResume: document.getElementById("scroll-resume"),
       badgeTwitch: document.getElementById("badge-twitch"),
       badgeKick: document.getElementById("badge-kick"),
-      badgeKickLabel: document.querySelector("#badge-kick span:last-child"),
+      badgeKickLabel: document.getElementById("badge-kick-label"),
       badgeLive: document.getElementById("badge-live"),
       liveLabel: document.getElementById("live-label"),
       btnTheme: document.getElementById("btn-theme"),
@@ -306,7 +306,7 @@ export class ChatUIController {
     this.el.badgeKick.classList.remove("connected", "unauthorized");
 
     if (!this.kickStreamConnected) {
-      if (this.el.badgeKickLabel) this.el.badgeKickLabel.textContent = "KK";
+      if (this.el.badgeKickLabel) this.el.badgeKickLabel.textContent = "Kick";
       this.el.badgeKick.title = "Kick desconectada do servidor";
       if (this.el.kickAuthBanner) this.el.kickAuthBanner.hidden = true;
       return;
@@ -314,7 +314,7 @@ export class ChatUIController {
 
     if (this.kickAuthorized) {
       this.el.badgeKick.classList.add("connected");
-      if (this.el.badgeKickLabel) this.el.badgeKickLabel.textContent = "KK";
+      if (this.el.badgeKickLabel) this.el.badgeKickLabel.textContent = "Kick";
       this.el.badgeKick.title = "Kick autorizada e ativa";
       if (this.el.kickAuthBanner) this.el.kickAuthBanner.hidden = true;
       if (this.el.btnKickOauth)
@@ -322,7 +322,7 @@ export class ChatUIController {
     } else {
       this.el.badgeKick.classList.add("unauthorized");
       if (this.el.badgeKickLabel)
-        this.el.badgeKickLabel.textContent = "KK • SEM AUTH";
+        this.el.badgeKickLabel.textContent = "Kick • Sem Auth";
       this.el.badgeKick.title =
         "Canal sem autorização na Kick — clique para conectar";
       if (this.el.kickAuthBanner) this.el.kickAuthBanner.hidden = false;
