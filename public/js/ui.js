@@ -34,12 +34,14 @@ export class ChatUIController {
     emoteManager,
     onChannelSubmit,
     onRecentSelect,
+    onRecentRemove,
     onPrefsChange,
   }) {
     this.maxMessages = maxMessages;
     this.emoteManager = emoteManager;
     this.onChannelSubmit = onChannelSubmit;
     this.onRecentSelect = onRecentSelect;
+    this.onRecentRemove = onRecentRemove;
     this.onPrefsChange = onPrefsChange;
 
     this.theme = "dark";
@@ -51,14 +53,20 @@ export class ChatUIController {
     this.mentionTerms = [];
     this.kickStreamConnected = false;
     this.kickAuthorized = false;
+    this.twitchEnabled = true;
+    this.kickEnabled = true;
 
     this.el = {
       btnChannelPicker: document.getElementById("btn-channel-picker"),
       activeChannelLabel: document.getElementById("active-channel-label"),
       channelDrawer: document.getElementById("channel-drawer"),
       channelForm: document.getElementById("channel-form"),
+      boxTwitch: document.getElementById("box-twitch"),
+      boxKick: document.getElementById("box-kick"),
       inputTwitch: document.getElementById("input-twitch"),
       inputKick: document.getElementById("input-kick"),
+      toggleTwitch: document.getElementById("toggle-twitch"),
+      toggleKick: document.getElementById("toggle-kick"),
       btnKickOauth: document.getElementById("btn-kick-oauth"),
       kickAuthBanner: document.getElementById("kick-auth-banner"),
       kickAuthText: document.getElementById("kick-auth-text"),
@@ -93,11 +101,22 @@ export class ChatUIController {
       this.toggleChannelDrawer(true),
     );
 
+    this.el.toggleTwitch.addEventListener("click", () => {
+      this.setPlatformEnabled("twitch", !this.twitchEnabled);
+    });
+
+    this.el.toggleKick.addEventListener("click", () => {
+      this.setPlatformEnabled("kick", !this.kickEnabled);
+    });
+
     this.el.channelForm.addEventListener("submit", (e) => {
       e.preventDefault();
-      const tw = this.el.inputTwitch.value;
-      const kk = this.el.inputKick.value || tw;
-      this.onChannelSubmit?.(tw, kk);
+      this.onChannelSubmit?.({
+        twitch: this.el.inputTwitch.value,
+        kick: this.el.inputKick.value,
+        twitchEnabled: this.twitchEnabled,
+        kickEnabled: this.kickEnabled,
+      });
       this.toggleChannelDrawer(false);
     });
 
@@ -167,6 +186,27 @@ export class ChatUIController {
     });
   }
 
+  setPlatformEnabled(platform, enabled) {
+    const isEnabled = Boolean(enabled);
+    if (platform === "twitch") {
+      this.twitchEnabled = isEnabled;
+      this.el.boxTwitch.classList.toggle("active", isEnabled);
+      this.el.boxTwitch.classList.toggle("disabled", !isEnabled);
+      this.el.inputTwitch.disabled = !isEnabled;
+      this.el.toggleTwitch.classList.toggle("active", isEnabled);
+      this.el.toggleTwitch.setAttribute("aria-pressed", String(isEnabled));
+      this.el.toggleTwitch.textContent = isEnabled ? "ON" : "OFF";
+    } else if (platform === "kick") {
+      this.kickEnabled = isEnabled;
+      this.el.boxKick.classList.toggle("active", isEnabled);
+      this.el.boxKick.classList.toggle("disabled", !isEnabled);
+      this.el.inputKick.disabled = !isEnabled;
+      this.el.toggleKick.classList.toggle("active", isEnabled);
+      this.el.toggleKick.setAttribute("aria-pressed", String(isEnabled));
+      this.el.toggleKick.textContent = isEnabled ? "ON" : "OFF";
+    }
+  }
+
   setTheme(theme) {
     this.theme = theme === "light" ? "light" : "dark";
     const isLight = this.theme === "light";
@@ -198,16 +238,44 @@ export class ChatUIController {
     return this.mentionTerms.some((term) => lower.includes(term));
   }
 
-  updateChannelHeader({ twitchChannel, kickChannel, backendUrl }) {
-    const label =
-      twitchChannel === kickChannel
-        ? twitchChannel
-        : `${twitchChannel} / ${kickChannel}`;
+  formatChannelDisplay({
+    twitchChannel,
+    kickChannel,
+    twitchEnabled,
+    kickEnabled,
+  }) {
+    const parts = [];
+    if (twitchEnabled && twitchChannel) parts.push(twitchChannel);
+    if (
+      kickEnabled &&
+      kickChannel &&
+      (!twitchEnabled || kickChannel !== twitchChannel)
+    ) {
+      parts.push(kickChannel);
+    }
+    return parts.join(" / ") || twitchChannel || kickChannel || "chat";
+  }
+
+  updateChannelHeader({
+    twitchChannel,
+    kickChannel,
+    twitchEnabled = true,
+    kickEnabled = true,
+    backendUrl,
+  }) {
+    const label = this.formatChannelDisplay({
+      twitchChannel,
+      kickChannel,
+      twitchEnabled,
+      kickEnabled,
+    });
 
     this.el.activeChannelLabel.textContent = label;
     document.title = `Chat • ${label}`;
     this.el.inputTwitch.value = twitchChannel;
     this.el.inputKick.value = kickChannel;
+    this.setPlatformEnabled("twitch", twitchEnabled);
+    this.setPlatformEnabled("kick", kickEnabled);
 
     if (this.el.btnKickOauth) {
       const oauthUrl = new URL(`${backendUrl}/auth/kick`);
@@ -230,18 +298,40 @@ export class ChatUIController {
     this.el.recentChannelsList.innerHTML = "";
 
     for (const item of recentChannels) {
-      const btn = document.createElement("button");
-      btn.type = "button";
-      btn.className = "recent-chip";
-      btn.textContent =
-        item.twitch === item.kick
-          ? item.twitch
-          : `${item.twitch} / ${item.kick}`;
-      btn.addEventListener("click", () => {
-        this.onRecentSelect?.(item.twitch, item.kick);
+      const chip = document.createElement("div");
+      chip.className = "recent-chip";
+
+      const selectBtn = document.createElement("button");
+      selectBtn.type = "button";
+      selectBtn.className = "recent-select-btn";
+
+      const twActive = item.twitchEnabled !== false && Boolean(item.twitch);
+      const kkActive = item.kickEnabled !== false && Boolean(item.kick);
+      const textParts = [];
+      if (twActive) textParts.push(item.twitch);
+      if (kkActive && (!twActive || item.kick !== item.twitch))
+        textParts.push(item.kick);
+      selectBtn.textContent = textParts.join(" / ") || item.twitch || item.kick;
+
+      selectBtn.addEventListener("click", () => {
+        this.onRecentSelect?.(item);
         this.toggleChannelDrawer(false);
       });
-      this.el.recentChannelsList.appendChild(btn);
+
+      const removeBtn = document.createElement("button");
+      removeBtn.type = "button";
+      removeBtn.className = "recent-remove-btn";
+      removeBtn.textContent = "×";
+      removeBtn.title = "Remover dos recentes";
+      removeBtn.setAttribute("aria-label", "Remover dos recentes");
+      removeBtn.addEventListener("click", (e) => {
+        e.stopPropagation();
+        this.onRecentRemove?.(item);
+      });
+
+      chip.appendChild(selectBtn);
+      chip.appendChild(removeBtn);
+      this.el.recentChannelsList.appendChild(chip);
     }
   }
 
@@ -307,7 +397,9 @@ export class ChatUIController {
 
     if (!this.kickStreamConnected) {
       if (this.el.badgeKickLabel) this.el.badgeKickLabel.textContent = "Kick";
-      this.el.badgeKick.title = "Kick desconectada do servidor";
+      this.el.badgeKick.title = this.kickEnabled
+        ? "Kick desconectada do servidor"
+        : "Kick desativada";
       if (this.el.kickAuthBanner) this.el.kickAuthBanner.hidden = true;
       return;
     }

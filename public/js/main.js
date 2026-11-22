@@ -6,7 +6,7 @@ import { RaffleManager } from "./raffle.js";
 const DEFAULT_CHANNEL = "aspaszin";
 const BACKEND_URL = window.location.origin;
 const MAX_MESSAGES = 250;
-const MAX_RECENT_CHANNELS = 8;
+const MAX_RECENT_CHANNELS = 5;
 const STORAGE_KEY = "multichat_prefs_v1";
 
 function sanitizeChannelSlug(raw) {
@@ -18,9 +18,17 @@ function sanitizeChannelSlug(raw) {
     .replace(/[^a-z0-9_-]/g, "");
 }
 
+function buildRecentKey(item) {
+  const tw = item.twitchEnabled !== false ? item.twitch || "" : "";
+  const kk = item.kickEnabled !== false ? item.kick || "" : "";
+  return `${tw}|${kk}`;
+}
+
 const appState = {
   twitchChannel: DEFAULT_CHANNEL,
   kickChannel: DEFAULT_CHANNEL,
+  twitchEnabled: true,
+  kickEnabled: true,
   recentChannels: [],
   sessionId: 0,
   eventSource: null,
@@ -32,8 +40,15 @@ const raffleManager = new RaffleManager();
 const ui = new ChatUIController({
   maxMessages: MAX_MESSAGES,
   emoteManager,
-  onChannelSubmit: (tw, kk) => switchChannels(tw, kk),
-  onRecentSelect: (tw, kk) => switchChannels(tw, kk),
+  onChannelSubmit: (cfg) => applyChannelSelection(cfg),
+  onRecentSelect: (item) =>
+    applyChannelSelection({
+      twitch: item.twitch,
+      kick: item.kick,
+      twitchEnabled: item.twitchEnabled !== false,
+      kickEnabled: item.kickEnabled !== false,
+    }),
+  onRecentRemove: (item) => removeRecentChannel(item),
   onPrefsChange: () => savePrefs(),
 });
 
@@ -70,11 +85,32 @@ function loadInitialPrefs() {
     sanitizeChannelSlug(saved.kickChannel) ||
     twitch;
 
+  const twEnabledParam = params.get("tw_on");
+  const kkEnabledParam = params.get("kk_on");
+
+  const twitchEnabled =
+    twEnabledParam !== null
+      ? twEnabledParam !== "0"
+      : typeof saved.twitchEnabled === "boolean"
+        ? saved.twitchEnabled
+        : true;
+
+  const kickEnabled =
+    kkEnabledParam !== null
+      ? kkEnabledParam !== "0"
+      : typeof saved.kickEnabled === "boolean"
+        ? saved.kickEnabled
+        : true;
+
   appState.twitchChannel = twitch;
   appState.kickChannel = kick;
-  appState.recentChannels = Array.isArray(saved.recentChannels)
+  appState.twitchEnabled = twitchEnabled || !kickEnabled ? twitchEnabled : true;
+  appState.kickEnabled = kickEnabled;
+
+  const loadedRecents = Array.isArray(saved.recentChannels)
     ? saved.recentChannels
     : [];
+  appState.recentChannels = loadedRecents.slice(0, MAX_RECENT_CHANNELS);
 
   ui.setFontIndex(typeof saved.fontIdx === "number" ? saved.fontIdx : 1);
   ui.setTheme(saved.theme === "light" ? "light" : "dark");
@@ -88,7 +124,9 @@ function savePrefs() {
     JSON.stringify({
       twitchChannel: appState.twitchChannel,
       kickChannel: appState.kickChannel,
-      recentChannels: appState.recentChannels,
+      twitchEnabled: appState.twitchEnabled,
+      kickEnabled: appState.kickEnabled,
+      recentChannels: appState.recentChannels.slice(0, MAX_RECENT_CHANNELS),
       fontIdx: ui.fontIdx,
       theme: ui.theme,
     }),
@@ -101,39 +139,61 @@ function syncUrlWithChannels() {
   url.searchParams.delete("tw");
   url.searchParams.delete("kk");
 
-  if (appState.twitchChannel === appState.kickChannel) {
-    url.searchParams.set("channel", appState.twitchChannel);
-    url.searchParams.delete("twitch");
-    url.searchParams.delete("kick");
-  } else {
-    url.searchParams.delete("channel");
-    if (appState.twitchChannel)
-      url.searchParams.set("twitch", appState.twitchChannel);
-    if (appState.kickChannel)
-      url.searchParams.set("kick", appState.kickChannel);
-  }
+  if (appState.twitchChannel)
+    url.searchParams.set("twitch", appState.twitchChannel);
+  else url.searchParams.delete("twitch");
+
+  if (appState.kickChannel) url.searchParams.set("kick", appState.kickChannel);
+  else url.searchParams.delete("kick");
+
+  url.searchParams.delete("channel");
+
+  if (appState.twitchEnabled) url.searchParams.delete("tw_on");
+  else url.searchParams.set("tw_on", "0");
+
+  if (appState.kickEnabled) url.searchParams.delete("kk_on");
+  else url.searchParams.set("kk_on", "0");
 
   window.history.replaceState({}, "", url.toString());
 }
 
-function recordRecentChannel(twitch, kick) {
-  const key = `${twitch}|${kick}`;
+function recordRecentChannel(entry) {
+  const cleanEntry = {
+    twitch: entry.twitch,
+    kick: entry.kick,
+    twitchEnabled: entry.twitchEnabled,
+    kickEnabled: entry.kickEnabled,
+  };
+  const targetKey = buildRecentKey(cleanEntry);
   const filtered = appState.recentChannels.filter(
-    (item) => `${item.twitch}|${item.kick}` !== key,
+    (item) => buildRecentKey(item) !== targetKey,
   );
-  filtered.unshift({ twitch, kick });
+  filtered.unshift(cleanEntry);
   appState.recentChannels = filtered.slice(0, MAX_RECENT_CHANNELS);
   ui.renderRecentChannels(appState.recentChannels);
 }
 
-function connectKickStream(kickChannel, currentSession) {
+function removeRecentChannel(entryToRemove) {
+  const targetKey = buildRecentKey(entryToRemove);
+  appState.recentChannels = appState.recentChannels.filter(
+    (item) => buildRecentKey(item) !== targetKey,
+  );
+  ui.renderRecentChannels(appState.recentChannels);
+  savePrefs();
+}
+
+function disconnectKickStream() {
   if (appState.eventSource) {
     appState.eventSource.close();
     appState.eventSource = null;
   }
-
   ui.setKickConnectionState({ connected: false, authorized: false });
-  if (!kickChannel) return;
+  ui.setLiveBadge({ anyLive: false });
+}
+
+function connectKickStream(kickChannel, currentSession) {
+  disconnectKickStream();
+  if (!appState.kickEnabled || !kickChannel) return;
 
   const streamUrl = new URL(`${BACKEND_URL}/api/stream`);
   streamUrl.searchParams.set("channel", kickChannel);
@@ -174,37 +234,76 @@ function connectKickStream(kickChannel, currentSession) {
   };
 }
 
-function switchChannels(rawTwitch, rawKick) {
-  const cleanTwitch = sanitizeChannelSlug(rawTwitch);
-  const cleanKick = sanitizeChannelSlug(rawKick) || cleanTwitch;
-  if (!cleanTwitch && !cleanKick) return;
+function applyChannelSelection({ twitch, kick, twitchEnabled, kickEnabled }) {
+  const cleanTwitch = sanitizeChannelSlug(twitch);
+  const cleanKick = sanitizeChannelSlug(kick);
 
-  appState.twitchChannel = cleanTwitch || cleanKick;
-  appState.kickChannel = cleanKick || appState.twitchChannel;
+  const activeTwitch = Boolean(twitchEnabled) && Boolean(cleanTwitch);
+  const activeKick = Boolean(kickEnabled) && Boolean(cleanKick);
+
+  if (!activeTwitch && !activeKick) return;
+
+  appState.twitchChannel = cleanTwitch || appState.twitchChannel;
+  appState.kickChannel = cleanKick || appState.kickChannel;
+  appState.twitchEnabled = activeTwitch;
+  appState.kickEnabled = activeKick;
+
   appState.sessionId += 1;
   const currentSession = appState.sessionId;
 
-  ui.setMentionTerms([appState.twitchChannel, appState.kickChannel]);
+  const mentionTerms = [];
+  if (activeTwitch && appState.twitchChannel)
+    mentionTerms.push(appState.twitchChannel);
+  if (activeKick && appState.kickChannel)
+    mentionTerms.push(appState.kickChannel);
+  ui.setMentionTerms(mentionTerms);
+
   ui.updateChannelHeader({
     twitchChannel: appState.twitchChannel,
     kickChannel: appState.kickChannel,
+    twitchEnabled: appState.twitchEnabled,
+    kickEnabled: appState.kickEnabled,
     backendUrl: BACKEND_URL,
   });
 
-  recordRecentChannel(appState.twitchChannel, appState.kickChannel);
+  recordRecentChannel({
+    twitch: appState.twitchChannel,
+    kick: appState.kickChannel,
+    twitchEnabled: appState.twitchEnabled,
+    kickEnabled: appState.kickEnabled,
+  });
+
   savePrefs();
   syncUrlWithChannels();
 
-  ui.resetForChannelSwitch(`Conectando em #${appState.twitchChannel}...`);
-  ui.setLiveBadge({ anyLive: false });
+  const bootTarget = activeTwitch
+    ? `#${appState.twitchChannel}`
+    : `#${appState.kickChannel} (Kick)`;
+  ui.resetForChannelSwitch(`Conectando em ${bootTarget}...`);
 
-  emoteManager.loadChannelMetadata(
-    appState.twitchChannel,
-    () => currentSession === appState.sessionId,
-  );
-  twitchClient.connect(appState.twitchChannel);
-  connectKickStream(appState.kickChannel, currentSession);
+  if (activeTwitch) {
+    emoteManager.loadChannelMetadata(
+      appState.twitchChannel,
+      () => currentSession === appState.sessionId,
+    );
+    twitchClient.connect(appState.twitchChannel);
+  } else {
+    emoteManager.reset();
+    twitchClient.disconnect();
+    ui.setTwitchStatus("offline");
+  }
+
+  if (activeKick) {
+    connectKickStream(appState.kickChannel, currentSession);
+  } else {
+    disconnectKickStream();
+  }
 }
 
 loadInitialPrefs();
-switchChannels(appState.twitchChannel, appState.kickChannel);
+applyChannelSelection({
+  twitch: appState.twitchChannel,
+  kick: appState.kickChannel,
+  twitchEnabled: appState.twitchEnabled,
+  kickEnabled: appState.kickEnabled,
+});

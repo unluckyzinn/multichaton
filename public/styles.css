@@ -263,15 +263,23 @@ body.light .live-pill.on {
 .field-box {
   display: flex;
   align-items: center;
-  flex: 1 1 140px;
+  flex: 1 1 160px;
   background: var(--surface);
   border: 1px solid var(--border);
   border-radius: 8px;
   overflow: hidden;
+  transition:
+    opacity 0.15s ease,
+    border-color 0.15s ease;
 }
 
-.field-box:focus-within {
+.field-box.active:focus-within {
   border-color: var(--twitch);
+}
+
+.field-box.disabled {
+  opacity: 0.55;
+  background: var(--surface-2);
 }
 
 .field-tag {
@@ -283,6 +291,7 @@ body.light .live-pill.on {
   align-items: center;
   border-right: 1px solid var(--border);
   background: var(--surface-2);
+  flex-shrink: 0;
 }
 
 .field-tag.twitch {
@@ -302,8 +311,36 @@ body.light .field-tag.kick {
   outline: none;
   background: transparent;
   color: var(--text);
-  padding: 8px 10px;
+  padding: 8px 8px;
   font-size: 13px;
+}
+
+.field-box input:disabled {
+  cursor: not-allowed;
+  text-decoration: line-through;
+  color: var(--text-muted);
+}
+
+.field-toggle {
+  border: 0;
+  border-left: 1px solid var(--border);
+  background: var(--surface-2);
+  color: var(--text-muted);
+  font-size: 10px;
+  font-weight: 800;
+  padding: 0 8px;
+  height: 100%;
+  cursor: pointer;
+  flex-shrink: 0;
+}
+
+.field-toggle.active {
+  color: #53fc18;
+  background: rgba(83, 252, 24, 0.08);
+}
+body.light .field-toggle.active {
+  color: #15803d;
+  background: rgba(21, 128, 61, 0.1);
 }
 
 .drawer-actions {
@@ -392,18 +429,50 @@ body.light .kick-auth-banner {
 }
 
 .recent-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
   border: 1px solid var(--border);
   background: var(--surface);
   color: var(--text);
   font-size: 12px;
-  padding: 4px 9px;
+  padding: 3px 6px 3px 9px;
   border-radius: 999px;
-  cursor: pointer;
   white-space: nowrap;
 }
 
-.recent-chip:hover {
-  border-color: var(--twitch);
+.recent-select-btn {
+  border: 0;
+  background: transparent;
+  color: inherit;
+  font-size: 12px;
+  font-weight: 600;
+  cursor: pointer;
+  padding: 0;
+}
+
+.recent-select-btn:hover {
+  color: var(--twitch);
+}
+
+.recent-remove-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 16px;
+  height: 16px;
+  border-radius: 50%;
+  border: 0;
+  background: var(--surface-2);
+  color: var(--text-muted);
+  font-size: 12px;
+  line-height: 1;
+  cursor: pointer;
+}
+
+.recent-remove-btn:hover {
+  background: #ef4444;
+  color: #ffffff;
 }
 
 /* ==========================================================================
