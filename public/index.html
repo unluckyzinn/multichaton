@@ -77,6 +77,24 @@
 
         <div class="actions-group">
           <button
+            id="btn-raffle"
+            class="icon-btn raffle-trigger-btn"
+            type="button"
+            title="Abrir Sorteio"
+            aria-label="Abrir Sorteio"
+          >
+            <svg
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              stroke-width="2"
+            >
+              <path d="M8 21h8M12 17v4M7 4h10v6a5 5 0 01-10 0V4z" />
+              <path d="M7 6H4v2a3 3 0 003 3M17 6h3v2a3 3 0 01-3 3" />
+            </svg>
+          </button>
+
+          <button
             id="btn-theme"
             class="icon-btn"
             type="button"
@@ -338,6 +356,238 @@
     <button id="scroll-resume" class="scroll-resume" type="button">
       Novas mensagens ↓
     </button>
+
+    <!-- Modal / Popup de Sorteio -->
+    <div id="raffle-backdrop" class="raffle-backdrop" hidden>
+      <section
+        class="raffle-modal"
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby="raffle-title"
+      >
+        <header class="raffle-header">
+          <div class="raffle-title-wrap">
+            <svg
+              class="raffle-crown-icon"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              stroke-width="2"
+              aria-hidden="true"
+            >
+              <path d="M8 21h8M12 17v4M7 4h10v6a5 5 0 01-10 0V4z" />
+              <path d="M7 6H4v2a3 3 0 003 3M17 6h3v2a3 3 0 01-3 3" />
+            </svg>
+            <h2 id="raffle-title">Sorteio no Chat</h2>
+            <span id="raffle-status-pill" class="raffle-status-pill"
+              >Parado</span
+            >
+          </div>
+          <button
+            id="btn-raffle-close"
+            class="icon-btn"
+            type="button"
+            title="Fechar sorteio"
+            aria-label="Fechar sorteio"
+          >
+            <svg
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              stroke-width="2"
+            >
+              <path d="M18 6L6 18M6 6l12 12" />
+            </svg>
+          </button>
+        </header>
+
+        <div class="raffle-body">
+          <div class="raffle-field-group">
+            <label class="raffle-label" for="raffle-keyword"
+              >Palavra-chave para participar</label
+            >
+            <div class="raffle-keyword-row">
+              <input
+                id="raffle-keyword"
+                class="raffle-input"
+                type="text"
+                value="!sorteio"
+                placeholder="ex: !sorteio"
+                spellcheck="false"
+                autocomplete="off"
+              />
+              <label
+                class="raffle-check-label"
+                title="Se marcado, a mensagem precisa conter a palavra exata; se desmarcado, basta conter o termo"
+              >
+                <input id="raffle-exact-match" type="checkbox" checked />
+                <span>Palavra exata</span>
+              </label>
+            </div>
+          </div>
+
+          <div class="raffle-field-group">
+            <span class="raffle-label"
+              >Quem pode participar (pode combinar filtros)</span
+            >
+            <div id="raffle-filters" class="raffle-filter-grid">
+              <button
+                id="raffle-filter-all"
+                class="raffle-filter-chip active"
+                type="button"
+                data-rfilter="all"
+              >
+                Todos
+              </button>
+
+              <button
+                class="raffle-filter-chip"
+                type="button"
+                data-rfilter="twitch"
+              >
+                <svg
+                  class="filter-icon"
+                  viewBox="0 0 24 24"
+                  fill="#9146ff"
+                  aria-hidden="true"
+                >
+                  <path
+                    d="M11.571 4.714h1.715v5.143H11.57zm4.715 0H18v5.143h-1.714zM6 0L1.714 4.286v15.428h5.143V24l4.286-4.286h3.428L22.286 12V0zm14.571 11.143l-3.428 3.428h-3.429l-3 3v-3H6.857V1.714h13.714Z"
+                  />
+                </svg>
+                <span>Twitch</span>
+              </button>
+
+              <button
+                class="raffle-filter-chip"
+                type="button"
+                data-rfilter="kick"
+              >
+                <svg
+                  class="filter-icon"
+                  viewBox="0 0 24 24"
+                  fill="#53fc18"
+                  aria-hidden="true"
+                >
+                  <path
+                    d="M3 2h6v7h2V6h2V3h7v6h-3v3h-3v2h3v3h3v5h-7v-3h-2v-3H9v6H3V2z"
+                  />
+                </svg>
+                <span>Kick</span>
+              </button>
+
+              <button
+                class="raffle-filter-chip"
+                type="button"
+                data-rfilter="subs"
+              >
+                <svg class="filter-icon" viewBox="0 0 16 16" aria-hidden="true">
+                  <path
+                    d="M12.7 1.4l1.9 1.9-6.6 6.6-1.9-1.9 6.6-6.6z"
+                    fill="#c084fc"
+                  />
+                  <path
+                    d="M5.2 7.4l3.4 3.4-1.2 1.2-3.4-3.4 1.2-1.2z"
+                    fill="#9146ff"
+                  />
+                  <circle cx="6.9" cy="9.1" r="1.1" fill="#f3e8ff" />
+                  <path
+                    d="M4.3 10.3l1.4 1.4-2.8 2.8-1.4-1.4 2.8-2.8z"
+                    fill="#a855f7"
+                  />
+                </svg>
+                <span>SUB</span>
+              </button>
+
+              <button
+                class="raffle-filter-chip"
+                type="button"
+                data-rfilter="mod"
+              >
+                <svg
+                  class="filter-icon"
+                  viewBox="0 0 16 16"
+                  fill="#22c55e"
+                  aria-hidden="true"
+                >
+                  <path
+                    d="M12.8 1.5l1.7 1.7-6.4 6.4 1.4 1.4-1.2 1.2-1.4-1.4-3.7 3.7-1.4-1.4 3.7-3.7-1.4-1.4 1.2-1.2 1.4 1.4 6.1-6.5z"
+                  />
+                </svg>
+                <span>MOD</span>
+              </button>
+
+              <button
+                class="raffle-filter-chip"
+                type="button"
+                data-rfilter="vip"
+              >
+                <svg
+                  class="filter-icon"
+                  viewBox="0 0 16 16"
+                  fill="#ec4899"
+                  aria-hidden="true"
+                >
+                  <path d="M8 1.5l5.5 6.5L8 14.5 2.5 8 8 1.5z" />
+                </svg>
+                <span>VIP</span>
+              </button>
+            </div>
+          </div>
+
+          <div class="raffle-stats-bar">
+            <div class="raffle-counter">
+              <strong id="raffle-count">0</strong>
+              <span>participantes inscritos</span>
+            </div>
+            <div id="raffle-recent-entries" class="raffle-recent-entries"></div>
+          </div>
+
+          <div id="raffle-winner-card" class="raffle-winner-card" hidden>
+            <div class="raffle-winner-badge">VENCEDOR SORTEADO</div>
+            <div class="raffle-winner-main">
+              <span
+                id="raffle-winner-platform"
+                class="raffle-winner-platform"
+              ></span>
+              <span id="raffle-winner-name" class="raffle-winner-name"></span>
+              <span id="raffle-winner-roles" class="raffle-winner-roles"></span>
+            </div>
+            <div id="raffle-winner-chat-box" class="raffle-winner-chat-box">
+              <span class="raffle-winner-chat-title"
+                >Mensagens do vencedor no chat:</span
+              >
+              <div id="raffle-winner-messages" class="raffle-winner-messages">
+                <span class="raffle-winner-empty"
+                  >Aguardando o vencedor mandar mensagem...</span
+                >
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <footer class="raffle-footer">
+          <button
+            id="btn-raffle-toggle"
+            class="primary-btn raffle-btn-start"
+            type="button"
+          >
+            Iniciar Sorteio
+          </button>
+          <button
+            id="btn-raffle-draw"
+            class="raffle-btn-draw"
+            type="button"
+            disabled
+          >
+            Sortear Ganhador
+          </button>
+          <button id="btn-raffle-reset" class="raffle-btn-reset" type="button">
+            Limpar
+          </button>
+        </footer>
+      </section>
+    </div>
 
     <script type="module" src="js/main.js"></script>
   </body>

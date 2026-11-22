@@ -590,3 +590,374 @@ body.light .kick-auth-banner {
   display: inline-flex;
   align-items: center;
 }
+
+/* ==========================================================================
+   Modal / Popup de Sorteio
+   ========================================================================== */
+.raffle-trigger-btn.running {
+  border-color: var(--kick);
+  color: var(--kick);
+  box-shadow: 0 0 10px rgba(83, 252, 24, 0.25);
+}
+
+.raffle-backdrop {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.72);
+  backdrop-filter: blur(4px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 14px;
+  z-index: 60;
+}
+
+.raffle-backdrop[hidden] {
+  display: none;
+}
+
+.raffle-modal {
+  width: 100%;
+  max-width: 470px;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 14px;
+  box-shadow: 0 20px 50px rgba(0, 0, 0, 0.6);
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  animation: rafflePopIn 0.16s ease-out;
+}
+
+@keyframes rafflePopIn {
+  from {
+    opacity: 0;
+    transform: scale(0.95) translateY(6px);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1) translateY(0);
+  }
+}
+
+.raffle-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 12px 14px;
+  border-bottom: 1px solid var(--border);
+  background: var(--surface-2);
+}
+
+.raffle-title-wrap {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.raffle-crown-icon {
+  width: 18px;
+  height: 18px;
+  color: #facc15;
+}
+
+.raffle-header h2 {
+  font-size: 15px;
+  font-weight: 800;
+}
+
+.raffle-status-pill {
+  font-size: 11px;
+  font-weight: 700;
+  padding: 2px 8px;
+  border-radius: 999px;
+  background: var(--bg);
+  border: 1px solid var(--border);
+  color: var(--text-muted);
+}
+
+.raffle-status-pill.active {
+  color: #53fc18;
+  border-color: rgba(83, 252, 24, 0.5);
+  background: rgba(83, 252, 24, 0.1);
+}
+body.light .raffle-status-pill.active {
+  color: #15803d;
+}
+
+.raffle-body {
+  padding: 14px;
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  max-height: 75vh;
+  overflow-y: auto;
+}
+
+.raffle-field-group {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.raffle-label {
+  font-size: 12px;
+  font-weight: 700;
+  color: var(--text-muted);
+}
+
+.raffle-keyword-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
+.raffle-input {
+  flex: 1 1 180px;
+  background: var(--bg);
+  color: var(--text);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 8px 11px;
+  font-size: 14px;
+  font-weight: 700;
+  outline: none;
+}
+
+.raffle-input:focus {
+  border-color: var(--twitch);
+}
+
+.raffle-input:disabled {
+  opacity: 0.65;
+}
+
+.raffle-check-label {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 12px;
+  color: var(--text-muted);
+  cursor: pointer;
+  user-select: none;
+}
+
+.raffle-check-label input {
+  accent-color: var(--twitch);
+  width: 15px;
+  height: 15px;
+}
+
+.raffle-filter-grid {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+.raffle-filter-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  border: 1px solid var(--border);
+  background: var(--surface-2);
+  color: var(--text-muted);
+  font-size: 12px;
+  font-weight: 700;
+  padding: 6px 11px;
+  border-radius: 999px;
+  cursor: pointer;
+}
+
+.raffle-filter-chip.active {
+  background: var(--twitch);
+  border-color: var(--twitch);
+  color: #ffffff;
+}
+
+.raffle-filter-chip.active .filter-icon path {
+  fill: #ffffff;
+}
+
+.raffle-stats-bar {
+  background: var(--bg);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  padding: 10px 12px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.raffle-counter {
+  display: flex;
+  align-items: baseline;
+  gap: 6px;
+}
+
+.raffle-counter strong {
+  font-size: 22px;
+  font-weight: 800;
+  color: var(--text);
+}
+
+.raffle-counter span {
+  font-size: 12px;
+  color: var(--text-muted);
+}
+
+.raffle-recent-entries {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 5px;
+  max-height: 62px;
+  overflow: hidden;
+}
+
+.raffle-entry-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 11px;
+  font-weight: 600;
+  padding: 2px 7px;
+  border-radius: 6px;
+  background: var(--surface-2);
+  border: 1px solid var(--border);
+  color: var(--text);
+}
+
+.raffle-entry-pill svg {
+  width: 11px;
+  height: 11px;
+}
+
+.raffle-winner-card {
+  border-radius: 12px;
+  padding: 12px;
+  background: linear-gradient(
+    135deg,
+    rgba(145, 70, 255, 0.2),
+    rgba(83, 252, 24, 0.14)
+  );
+  border: 1px solid var(--twitch);
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.raffle-winner-card[hidden] {
+  display: none;
+}
+
+.raffle-winner-badge {
+  font-size: 10px;
+  font-weight: 800;
+  letter-spacing: 0.06em;
+  color: #facc15;
+}
+body.light .raffle-winner-badge {
+  color: #b45309;
+}
+
+.raffle-winner-main {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.raffle-winner-platform svg {
+  width: 18px;
+  height: 18px;
+  display: block;
+}
+
+.raffle-winner-name {
+  font-size: 20px;
+  font-weight: 900;
+}
+
+.raffle-winner-roles {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 11px;
+  font-weight: 700;
+  color: var(--text-muted);
+}
+
+.raffle-winner-chat-box {
+  background: var(--bg);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 8px 10px;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.raffle-winner-chat-title {
+  font-size: 11px;
+  font-weight: 700;
+  color: var(--text-muted);
+}
+
+.raffle-winner-messages {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  max-height: 76px;
+  overflow-y: auto;
+  font-size: 12px;
+}
+
+.raffle-winner-empty {
+  color: var(--text-muted);
+  font-style: italic;
+}
+
+.raffle-footer {
+  display: flex;
+  gap: 8px;
+  padding: 12px 14px;
+  border-top: 1px solid var(--border);
+  background: var(--surface-2);
+}
+
+.raffle-btn-start {
+  flex: 1;
+}
+
+.raffle-btn-start.stop {
+  background: #ef4444;
+}
+
+.raffle-btn-draw {
+  flex: 1;
+  height: 34px;
+  border-radius: 8px;
+  border: 0;
+  background: #22c55e;
+  color: #052e16;
+  font-size: 13px;
+  font-weight: 800;
+  cursor: pointer;
+}
+
+.raffle-btn-draw:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+
+.raffle-btn-reset {
+  height: 34px;
+  padding: 0 12px;
+  border-radius: 8px;
+  border: 1px solid var(--border);
+  background: var(--surface);
+  color: var(--text-muted);
+  font-size: 12px;
+  font-weight: 700;
+  cursor: pointer;
+}

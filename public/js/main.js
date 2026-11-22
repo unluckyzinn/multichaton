@@ -1,6 +1,7 @@
 import { EmoteAndBadgeManager } from "./emotes.js";
 import { TwitchIrcClient } from "./twitch.js";
 import { ChatUIController } from "./ui.js";
+import { RaffleManager } from "./raffle.js";
 
 const DEFAULT_CHANNEL = "aspaszin";
 const BACKEND_URL = window.location.origin;
@@ -26,6 +27,7 @@ const appState = {
 };
 
 const emoteManager = new EmoteAndBadgeManager(BACKEND_URL);
+const raffleManager = new RaffleManager();
 
 const ui = new ChatUIController({
   maxMessages: MAX_MESSAGES,
@@ -35,9 +37,14 @@ const ui = new ChatUIController({
   onPrefsChange: () => savePrefs(),
 });
 
+function handleIncomingChatMessage(msg) {
+  ui.appendMessage(msg);
+  raffleManager.processIncomingMessage(msg);
+}
+
 const twitchClient = new TwitchIrcClient({
   onStatusChange: (status) => ui.setTwitchStatus(status),
-  onMessage: (msg) => ui.appendMessage(msg),
+  onMessage: (msg) => handleIncomingChatMessage(msg),
 });
 
 function loadInitialPrefs() {
@@ -157,7 +164,7 @@ function connectKickStream(kickChannel, currentSession) {
       const msg = JSON.parse(e.data);
       const msgChannel = sanitizeChannelSlug(msg.channel || "");
       if (msgChannel && msgChannel !== kickChannel) return;
-      ui.appendMessage(msg);
+      handleIncomingChatMessage(msg);
     } catch (_) {}
   });
 
