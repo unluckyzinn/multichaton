@@ -47,6 +47,9 @@ body {
   flex-direction: column;
 }
 
+/* ==========================================================================
+   Barra Superior & Status
+   ========================================================================== */
 .topbar {
   background: var(--surface);
   border-bottom: 1px solid var(--border);
@@ -159,7 +162,6 @@ body {
 #badge-kick {
   cursor: pointer;
 }
-
 #badge-kick.connected {
   color: var(--text);
   border-color: rgba(83, 252, 24, 0.5);
@@ -167,7 +169,6 @@ body {
 #badge-kick.connected .dot {
   background: var(--kick);
 }
-
 #badge-kick.unauthorized {
   color: #fbbf24;
   border-color: rgba(245, 158, 11, 0.55);
@@ -219,12 +220,19 @@ body.light .live-pill.on {
   height: 15px;
 }
 
-.icon-btn.active {
+.icon-btn.active,
+.raffle-trigger-btn.running {
   border-color: var(--kick);
   color: var(--kick);
 }
 
-/* Painel de seleção de canal */
+.raffle-trigger-btn.running {
+  box-shadow: 0 0 10px rgba(83, 252, 24, 0.25);
+}
+
+/* ==========================================================================
+   Painel de Seleção de Canal
+   ========================================================================== */
 .channel-drawer {
   padding: 10px;
   border-top: 1px solid var(--border);
@@ -398,7 +406,9 @@ body.light .kick-auth-banner {
   border-color: var(--twitch);
 }
 
-/* Barra de filtros */
+/* ==========================================================================
+   Barra de Filtros do Chat
+   ========================================================================== */
 .filter-row {
   border-top: 1px solid var(--border);
   overflow-x: auto;
@@ -452,7 +462,9 @@ body.light .kick-auth-banner {
   fill: #ffffff;
 }
 
-/* Lista de mensagens */
+/* ==========================================================================
+   Lista de Mensagens do Chat
+   ========================================================================== */
 .chat-container {
   flex: 1;
   overflow-y: auto;
@@ -594,12 +606,6 @@ body.light .kick-auth-banner {
 /* ==========================================================================
    Modal / Popup de Sorteio
    ========================================================================== */
-.raffle-trigger-btn.running {
-  border-color: var(--kick);
-  color: var(--kick);
-  box-shadow: 0 0 10px rgba(83, 252, 24, 0.25);
-}
-
 .raffle-backdrop {
   position: fixed;
   inset: 0;
@@ -706,15 +712,8 @@ body.light .raffle-status-pill.active {
   color: var(--text-muted);
 }
 
-.raffle-keyword-row {
-  display: flex;
-  align-items: center;
-  gap: 10px;
-  flex-wrap: wrap;
-}
-
 .raffle-input {
-  flex: 1 1 180px;
+  width: 100%;
   background: var(--bg);
   color: var(--text);
   border: 1px solid var(--border);
@@ -731,22 +730,6 @@ body.light .raffle-status-pill.active {
 
 .raffle-input:disabled {
   opacity: 0.65;
-}
-
-.raffle-check-label {
-  display: inline-flex;
-  align-items: center;
-  gap: 6px;
-  font-size: 12px;
-  color: var(--text-muted);
-  cursor: pointer;
-  user-select: none;
-}
-
-.raffle-check-label input {
-  accent-color: var(--twitch);
-  width: 15px;
-  height: 15px;
 }
 
 .raffle-filter-grid {

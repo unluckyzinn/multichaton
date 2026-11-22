@@ -5,9 +5,8 @@ export class RaffleManager {
   constructor() {
     this.isRunning = false;
     this.keyword = "!sorteio";
-    this.exactMatch = true;
     this.activeFilters = new Set(); // vazio = Todos
-    this.participants = new Map(); // key: `${platform}:${usernameLower}` -> entry
+    this.participants = new Map();
     this.winner = null;
 
     this.el = {
@@ -16,7 +15,6 @@ export class RaffleManager {
       btnClose: document.getElementById("btn-raffle-close"),
       statusPill: document.getElementById("raffle-status-pill"),
       keywordInput: document.getElementById("raffle-keyword"),
-      exactCheckbox: document.getElementById("raffle-exact-match"),
       filterAllBtn: document.getElementById("raffle-filter-all"),
       filterChips: document.querySelectorAll(".raffle-filter-chip"),
       countLabel: document.getElementById("raffle-count"),
@@ -99,7 +97,6 @@ export class RaffleManager {
     }
 
     this.keyword = rawWord.toLowerCase();
-    this.exactMatch = Boolean(this.el.exactCheckbox?.checked);
     this.isRunning = true;
     this.syncUI();
   }
@@ -132,7 +129,6 @@ export class RaffleManager {
     this.syncFilterChips();
 
     if (this.el.keywordInput) this.el.keywordInput.disabled = this.isRunning;
-    if (this.el.exactCheckbox) this.el.exactCheckbox.disabled = this.isRunning;
 
     if (this.el.statusPill) {
       this.el.statusPill.textContent = this.isRunning ? "Ao vivo" : "Parado";
@@ -189,16 +185,12 @@ export class RaffleManager {
       .trim()
       .toLowerCase();
     if (!clean || !this.keyword) return false;
-    if (this.exactMatch) {
-      return clean === this.keyword;
-    }
     return clean.includes(this.keyword);
   }
 
   processIncomingMessage(msg) {
     if (!msg?.username || !msg?.text) return;
 
-    // Se já houve vencedor sorteado, exibe as mensagens dele em tempo real no card
     if (
       this.winner &&
       msg.platform === this.winner.platform &&
