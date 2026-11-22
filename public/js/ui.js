@@ -49,6 +49,8 @@ export class ChatUIController {
     this.wakeLock = null;
     this.seenIds = new Set();
     this.mentionTerms = [];
+    this.kickStreamConnected = false;
+    this.kickAuthorized = false;
 
     this.el = {
       btnChannelPicker: document.getElementById("btn-channel-picker"),
@@ -58,12 +60,15 @@ export class ChatUIController {
       inputTwitch: document.getElementById("input-twitch"),
       inputKick: document.getElementById("input-kick"),
       btnKickOauth: document.getElementById("btn-kick-oauth"),
+      kickAuthBanner: document.getElementById("kick-auth-banner"),
+      kickAuthText: document.getElementById("kick-auth-text"),
       recentChannelsWrap: document.getElementById("recent-channels-wrap"),
       recentChannelsList: document.getElementById("recent-channels-list"),
       chatContainer: document.getElementById("chat-container"),
       scrollResume: document.getElementById("scroll-resume"),
       badgeTwitch: document.getElementById("badge-twitch"),
       badgeKick: document.getElementById("badge-kick"),
+      badgeKickLabel: document.querySelector("#badge-kick span:last-child"),
       badgeLive: document.getElementById("badge-live"),
       liveLabel: document.getElementById("live-label"),
       btnTheme: document.getElementById("btn-theme"),
@@ -83,6 +88,9 @@ export class ChatUIController {
   bindEvents() {
     this.el.btnChannelPicker.addEventListener("click", () =>
       this.toggleChannelDrawer(),
+    );
+    this.el.badgeKick.addEventListener("click", () =>
+      this.toggleChannelDrawer(true),
     );
 
     this.el.channelForm.addEventListener("submit", (e) => {
@@ -206,6 +214,10 @@ export class ChatUIController {
       if (kickChannel) oauthUrl.searchParams.set("channel", kickChannel);
       this.el.btnKickOauth.href = oauthUrl.toString();
     }
+
+    if (this.el.kickAuthText) {
+      this.el.kickAuthText.textContent = `O canal #${kickChannel} ainda não autorizou a Kick. Apenas o chat da Twitch aparecerá.`;
+    }
   }
 
   renderRecentChannels(recentChannels = []) {
@@ -247,6 +259,9 @@ export class ChatUIController {
   resetForChannelSwitch(bootMessage) {
     this.seenIds.clear();
     this.autoScroll = true;
+    this.kickStreamConnected = false;
+    this.kickAuthorized = false;
+    this.syncKickStatusUI();
     this.el.scrollResume.classList.remove("visible");
     this.el.chatContainer.innerHTML = "";
     const note = document.createElement("div");
@@ -277,8 +292,43 @@ export class ChatUIController {
     }
   }
 
-  setKickConnected(isConnected) {
-    this.el.badgeKick.classList.toggle("connected", Boolean(isConnected));
+  setKickConnectionState({ connected, authorized }) {
+    if (typeof connected === "boolean") {
+      this.kickStreamConnected = connected;
+    }
+    if (typeof authorized === "boolean") {
+      this.kickAuthorized = authorized;
+    }
+    this.syncKickStatusUI();
+  }
+
+  syncKickStatusUI() {
+    this.el.badgeKick.classList.remove("connected", "unauthorized");
+
+    if (!this.kickStreamConnected) {
+      if (this.el.badgeKickLabel) this.el.badgeKickLabel.textContent = "KK";
+      this.el.badgeKick.title = "Kick desconectada do servidor";
+      if (this.el.kickAuthBanner) this.el.kickAuthBanner.hidden = true;
+      return;
+    }
+
+    if (this.kickAuthorized) {
+      this.el.badgeKick.classList.add("connected");
+      if (this.el.badgeKickLabel) this.el.badgeKickLabel.textContent = "KK";
+      this.el.badgeKick.title = "Kick autorizada e ativa";
+      if (this.el.kickAuthBanner) this.el.kickAuthBanner.hidden = true;
+      if (this.el.btnKickOauth)
+        this.el.btnKickOauth.textContent = "Reautorizar Kick";
+    } else {
+      this.el.badgeKick.classList.add("unauthorized");
+      if (this.el.badgeKickLabel)
+        this.el.badgeKickLabel.textContent = "KK • SEM AUTH";
+      this.el.badgeKick.title =
+        "Canal sem autorização na Kick — clique para conectar";
+      if (this.el.kickAuthBanner) this.el.kickAuthBanner.hidden = false;
+      if (this.el.btnKickOauth)
+        this.el.btnKickOauth.textContent = "Autorizar Kick";
+    }
   }
 
   setLiveBadge(liveState) {

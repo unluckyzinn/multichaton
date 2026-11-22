@@ -125,7 +125,7 @@ function connectKickStream(kickChannel, currentSession) {
     appState.eventSource = null;
   }
 
-  ui.setKickConnected(false);
+  ui.setKickConnectionState({ connected: false, authorized: false });
   if (!kickChannel) return;
 
   const streamUrl = new URL(`${BACKEND_URL}/api/stream`);
@@ -136,13 +136,18 @@ function connectKickStream(kickChannel, currentSession) {
 
   es.onopen = () => {
     if (currentSession !== appState.sessionId) return;
-    ui.setKickConnected(true);
+    ui.setKickConnectionState({ connected: true });
   };
 
   es.addEventListener("status", (e) => {
     if (currentSession !== appState.sessionId) return;
     try {
-      ui.setLiveBadge(JSON.parse(e.data));
+      const statusData = JSON.parse(e.data);
+      ui.setKickConnectionState({
+        connected: true,
+        authorized: Boolean(statusData?.kickAuthorized),
+      });
+      ui.setLiveBadge(statusData);
     } catch (_) {}
   });
 
@@ -158,7 +163,7 @@ function connectKickStream(kickChannel, currentSession) {
 
   es.onerror = () => {
     if (currentSession !== appState.sessionId) return;
-    ui.setKickConnected(false);
+    ui.setKickConnectionState({ connected: false, authorized: false });
   };
 }
 
